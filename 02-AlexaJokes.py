@@ -2,13 +2,17 @@ import tkinter as tk
 from tkinter import ttk
 import random
 from pathlib import Path
+import pygame
 
-class AlexaJokesApp:
+class AlexaJokeApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Alexa's Joke Corner")
         self.root.geometry("650x550")
         self.root.configure(bg='#f8f4ff')
+        
+        # Initialize pygame for sound
+        pygame.mixer.init()
         
         # Joke data and state
         self.jokes = []
@@ -40,6 +44,39 @@ class AlexaJokesApp:
                 
         except Exception as e:
             self.jokes = ["Error loading jokes?~Try again later!"]
+
+    def play_punchline_sound(self):
+        """Play punchline sound using pygame generated tones"""
+        try:
+            # Generate a "ba-dum-tss"-like sound sequence
+            # First beep (ba)
+            pygame.mixer.Sound(buffer=bytes([150] * 8000)).play()
+            pygame.time.delay(200)  # Short pause
+            
+            # Second beep (dum)
+            pygame.mixer.Sound(buffer=bytes([100] * 12000)).play()
+            pygame.time.delay(300)  # Longer pause
+            
+            # Third beep (tss)
+            pygame.mixer.Sound(buffer=bytes([50] * 16000)).play()
+            
+        except Exception as e:
+            print(f"Sound error: {e} - Continuing without audio")
+
+    def play_celebration_sound(self):
+        """Play celebration sound using pygame generated tones"""
+        try:
+            # Generate a celebration fanfare sequence
+            # Rising notes for excitement
+            for freq in [100, 150, 200, 250, 300]:
+                pygame.mixer.Sound(buffer=bytes([freq] * 5000)).play()
+                pygame.time.delay(100)  # Quick succession
+                
+            # Final celebratory note
+            pygame.mixer.Sound(buffer=bytes([255] * 10000)).play()
+            
+        except Exception as e:
+            print(f"Sound error: {e} - Continuing without audio")
 
     def setup_gui(self):
         """Setup the GUI structure"""
@@ -222,11 +259,12 @@ class AlexaJokesApp:
                 star.config(fg='#d3d3d3')
 
     def show_punchline(self):
-        """Display the punchline"""
+        """Display the punchline with sound effect"""
         if hasattr(self, 'current_punchline') and not self.punchline_shown:
             self.punchline_label.config(text=self.current_punchline)
             self.punchline_shown = True
             self.rate_btn.config(state='normal')
+            self.play_punchline_sound()
 
     def show_rating(self):
         """Show the rating stars"""
@@ -234,7 +272,7 @@ class AlexaJokesApp:
             self.rating_frame.pack(pady=10)
 
     def rate_joke(self, stars):
-        """Handle joke rating"""
+        """Handle joke rating with sound effects"""
         if self.rating_given:
             return
         
@@ -252,6 +290,7 @@ class AlexaJokesApp:
             response = "Ouch... you hurt my motherboard.."
         elif stars == 5:
             response = "WOOO I'm basically a stand-up comedian now.."
+            self.play_celebration_sound()
         else:
             response = f"Thanks for the {stars} star rating!"
 
@@ -259,7 +298,7 @@ class AlexaJokesApp:
 
 def main():
     root = tk.Tk()
-    app = AlexaJokesApp(root)
+    app = AlexaJokeApp(root)
     root.mainloop()
 
 if __name__ == "__main__":
