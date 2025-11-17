@@ -7,13 +7,14 @@ class AlexaJokesApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Alexa's Joke Corner")
-        self.root.geometry("600x500")
+        self.root.geometry("650x550")
         self.root.configure(bg='#f8f4ff')
         
         # Joke data and state
         self.jokes = []
         self.current_joke = None
         self.punchline_shown = False
+        self.rating_given = False
         self.load_jokes()
         
         self.setup_gui()
@@ -83,6 +84,43 @@ class AlexaJokesApp:
         )
         self.punchline_label.pack(pady=10)
         
+        # Rating frame (initially hidden)
+        self.rating_frame = tk.Frame(self.joke_frame, bg='#f0ebff')
+        self.rating_label = tk.Label(
+            self.rating_frame,
+            text="Rate this joke:",
+            font=("Verdana", 10),
+            fg='#4a2c6d',
+            bg='#f0ebff'
+        )
+        self.rating_label.pack(pady=(10, 5))
+        
+        self.stars_frame = tk.Frame(self.rating_frame, bg='#f0ebff')
+        self.stars_frame.pack()
+        
+        self.star_buttons = []
+        for i in range(5):
+            star = tk.Label(
+                self.stars_frame,
+                text="★",
+                font=("Arial", 20),
+                fg='#d3d3d3',
+                bg='#f0ebff',
+                cursor="hand2"
+            )
+            star.pack(side='left')
+            star.bind('<Button-1>', lambda e, idx=i: self.rate_joke(idx + 1))
+            self.star_buttons.append(star)
+        
+        self.rating_response = tk.Label(
+            self.rating_frame,
+            text="",
+            font=("Verdana", 9, "italic"),
+            fg='#4a2c6d',
+            bg='#f0ebff'
+        )
+        self.rating_response.pack(pady=5)
+        
         # Button frame
         button_frame = tk.Frame(main_frame, bg='#f8f4ff')
         button_frame.pack(pady=10)
@@ -124,6 +162,18 @@ class AlexaJokesApp:
         )
         self.next_joke_btn.pack(side='left', padx=5)
         
+        self.rate_btn = tk.Button(
+            button_frame,
+            text="Rate my Joke",
+            command=self.show_rating,
+            font=("Verdana", 10),
+            bg='#9370db',
+            fg='white',
+            padx=15,
+            pady=8
+        )
+        self.rate_btn.pack(side='left', padx=5)
+        
         # Quit button
         quit_btn = tk.Button(
             main_frame,
@@ -136,11 +186,18 @@ class AlexaJokesApp:
             pady=8
         )
         quit_btn.pack(pady=10)
+        
+        # Initially disable some buttons
+        self.punchline_btn.config(state='disabled')
+        self.rate_btn.config(state='disabled')
 
     def show_new_joke(self):
         """Display a new random joke"""
         # Reset state
         self.punchline_shown = False
+        self.rating_given = False
+        self.rating_frame.pack_forget()
+        self.rating_response.config(text="")
         
         if self.jokes:
             self.current_joke = random.choice(self.jokes)
@@ -158,12 +215,47 @@ class AlexaJokesApp:
             self.setup_label.config(text=setup)
             self.punchline_label.config(text="")
             self.punchline_btn.config(state='normal')
+            self.rate_btn.config(state='disabled')
+            
+            # Reset stars
+            for star in self.star_buttons:
+                star.config(fg='#d3d3d3')
 
     def show_punchline(self):
         """Display the punchline"""
         if hasattr(self, 'current_punchline') and not self.punchline_shown:
             self.punchline_label.config(text=self.current_punchline)
             self.punchline_shown = True
+            self.rate_btn.config(state='normal')
+
+    def show_rating(self):
+        """Show the rating stars"""
+        if self.punchline_shown:
+            self.rating_frame.pack(pady=10)
+
+    def rate_joke(self, stars):
+        """Handle joke rating"""
+        if self.rating_given:
+            return
+        
+        self.rating_given = True
+        
+        # Update star colors
+        for i, star in enumerate(self.star_buttons):
+            if i < stars:
+                star.config(fg='#ffd700')
+            else:
+                star.config(fg='#d3d3d3')
+        
+        # Show response based on rating
+        if stars == 1:
+            response = "Ouch... you hurt my motherboard.."
+        elif stars == 5:
+            response = "WOOO I'm basically a stand-up comedian now.."
+        else:
+            response = f"Thanks for the {stars} star rating!"
+
+        self.rating_response.config(text=response)
 
 def main():
     root = tk.Tk()
