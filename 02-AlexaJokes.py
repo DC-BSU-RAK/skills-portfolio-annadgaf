@@ -14,20 +14,33 @@ class AlexaJokeApp:
         # Initialize pygame for sound
         pygame.mixer.init()
         
+        # Enhanced color scheme with better button colors
+        self.colors = {
+            'bg': '#f8f4ff',
+            'accent': '#e6e0ff',
+            'accent2': '#f0ebff',
+            'text': '#4a2c6d',
+            'button': '#8a2be2',      # Brighter purple
+            'button_hover': '#6a0dad', # Darker purple for hover
+            'star_active': '#ffd700',
+            'star_inactive': '#d3d3d3'
+        }
+        
         # Joke data and state
         self.jokes = []
         self.current_joke = None
         self.punchline_shown = False
         self.rating_given = False
+        self.joke_count = 0
         self.load_jokes()
         
         self.setup_gui()
         self.show_new_joke()
     
     def load_jokes(self):
-        """Load jokes from randomJokes.txt file"""
+        """Load jokes from A1 - Resources/randomJokes.txt file"""
         try:
-            file_path = Path("randomJokes.txt")
+            file_path = Path("A1 - Resources/randomJokes.txt")
             if file_path.exists():
                 with open(file_path, 'r', encoding='utf-8') as file:
                     lines = [line.strip() for line in file if line.strip()]
@@ -41,46 +54,71 @@ class AlexaJokeApp:
                     "Why did the scarecrow win an award?~He was outstanding in his field!",
                     "What do you call a fake noodle?~An impasta!"
                 ]
+                self.show_error_message("Error 404: Humor not found. Using backup jokes!")
                 
         except Exception as e:
             self.jokes = ["Error loading jokes?~Try again later!"]
+            self.show_error_message("Alexa forgot the jokes, please be patient")
+
+    def show_error_message(self, message):
+        """Show temporary error messages in status label"""
+        self.status_label.config(text=message)
+        self.root.after(3000, lambda: self.status_label.config(text=""))
 
     def play_punchline_sound(self):
-        """Play punchline sound using pygame generated tones"""
+        """Play audience laughter sound effect"""
         try:
-            # Generate a "ba-dum-tss"-like sound sequence
-            # First beep (ba)
-            pygame.mixer.Sound(buffer=bytes([150] * 8000)).play()
-            pygame.time.delay(200)  # Short pause
-            
-            # Second beep (dum)
-            pygame.mixer.Sound(buffer=bytes([100] * 12000)).play()
-            pygame.time.delay(300)  # Longer pause
-            
-            # Third beep (tss)
-            pygame.mixer.Sound(buffer=bytes([50] * 16000)).play()
-            
+            # Create a laughter-like sound using multiple tones
+            for i in range(3):
+                # Varying frequencies to simulate laughter
+                freq = 300 + (i * 50)
+                pygame.mixer.Sound(buffer=bytes([freq] * 3000)).play()
+                pygame.time.delay(150)
         except Exception as e:
             print(f"Sound error: {e} - Continuing without audio")
 
     def play_celebration_sound(self):
-        """Play celebration sound using pygame generated tones"""
+        """Play applause and celebration sound effect"""
         try:
-            # Generate a celebration fanfare sequence
-            # Rising notes for excitement
-            for freq in [100, 150, 200, 250, 300]:
-                pygame.mixer.Sound(buffer=bytes([freq] * 5000)).play()
-                pygame.time.delay(100)  # Quick succession
-                
-            # Final celebratory note
-            pygame.mixer.Sound(buffer=bytes([255] * 10000)).play()
-            
+            # Create applause-like sound with multiple tones
+            for i in range(5):
+                # Random frequencies to simulate clapping
+                freq = random.randint(200, 400)
+                pygame.mixer.Sound(buffer=bytes([freq] * 1000)).play()
+                pygame.time.delay(80)
         except Exception as e:
             print(f"Sound error: {e} - Continuing without audio")
 
+    def create_button(self, parent, text, command, color=None):
+        """Create a styled button with hover effects"""
+        btn_color = color or self.colors['button']
+        btn = tk.Button(
+            parent,
+            text=text,
+            command=command,
+            font=("Verdana", 10, "bold"),
+            bg=btn_color,
+            fg='white',
+            relief='raised',
+            padx=15,
+            pady=8,
+            cursor="hand2"
+        )
+        
+        # Add hover effect
+        def on_enter(e):
+            btn['bg'] = self.colors['button_hover']
+        def on_leave(e):
+            btn['bg'] = btn_color
+            
+        btn.bind("<Enter>", on_enter)
+        btn.bind("<Leave>", on_leave)
+        
+        return btn
+
     def setup_gui(self):
-        """Setup the GUI structure"""
-        main_frame = tk.Frame(self.root, bg='#f8f4ff', padx=20, pady=20)
+        """Setup the GUI structure with improved button styling"""
+        main_frame = tk.Frame(self.root, bg=self.colors['bg'], padx=20, pady=20)
         main_frame.pack(fill='both', expand=True)
         
         # Title
@@ -88,13 +126,13 @@ class AlexaJokeApp:
             main_frame, 
             text="Alexa's Joke Corner", 
             font=("Georgia", 20, "bold"),
-            fg='#4a2c6d',
-            bg='#f8f4ff'
+            fg=self.colors['text'],
+            bg=self.colors['bg']
         )
         title_label.pack(pady=20)
         
         # Joke display frame
-        self.joke_frame = tk.Frame(main_frame, bg='#f0ebff', padx=20, pady=20)
+        self.joke_frame = tk.Frame(main_frame, bg=self.colors['accent2'], padx=20, pady=20)
         self.joke_frame.pack(fill='both', expand=True, pady=20)
         
         # Setup label
@@ -102,8 +140,8 @@ class AlexaJokeApp:
             self.joke_frame,
             text="",
             font=("Georgia", 14),
-            fg='#4a2c6d',
-            bg='#f0ebff',
+            fg=self.colors['text'],
+            bg=self.colors['accent2'],
             wraplength=500,
             justify='center'
         )
@@ -115,24 +153,24 @@ class AlexaJokeApp:
             text="",
             font=("Georgia", 12, "italic"),
             fg='#6a4c9c',
-            bg='#f0ebff',
+            bg=self.colors['accent2'],
             wraplength=500,
             justify='center'
         )
         self.punchline_label.pack(pady=10)
         
         # Rating frame (initially hidden)
-        self.rating_frame = tk.Frame(self.joke_frame, bg='#f0ebff')
+        self.rating_frame = tk.Frame(self.joke_frame, bg=self.colors['accent2'])
         self.rating_label = tk.Label(
             self.rating_frame,
             text="Rate this joke:",
             font=("Verdana", 10),
-            fg='#4a2c6d',
-            bg='#f0ebff'
+            fg=self.colors['text'],
+            bg=self.colors['accent2']
         )
         self.rating_label.pack(pady=(10, 5))
         
-        self.stars_frame = tk.Frame(self.rating_frame, bg='#f0ebff')
+        self.stars_frame = tk.Frame(self.rating_frame, bg=self.colors['accent2'])
         self.stars_frame.pack()
         
         self.star_buttons = []
@@ -141,8 +179,8 @@ class AlexaJokeApp:
                 self.stars_frame,
                 text="★",
                 font=("Arial", 20),
-                fg='#d3d3d3',
-                bg='#f0ebff',
+                fg=self.colors['star_inactive'],
+                bg=self.colors['accent2'],
                 cursor="hand2"
             )
             star.pack(side='left')
@@ -153,83 +191,52 @@ class AlexaJokeApp:
             self.rating_frame,
             text="",
             font=("Verdana", 9, "italic"),
-            fg='#4a2c6d',
-            bg='#f0ebff'
+            fg=self.colors['text'],
+            bg=self.colors['accent2']
         )
         self.rating_response.pack(pady=5)
         
-        # Button frame
-        button_frame = tk.Frame(main_frame, bg='#f8f4ff')
+        # Button frame with improved styling
+        button_frame = tk.Frame(main_frame, bg=self.colors['bg'])
         button_frame.pack(pady=10)
         
-        # Action buttons
-        self.tell_joke_btn = tk.Button(
-            button_frame,
-            text="Alexa tell me a Joke",
-            command=self.show_new_joke,
-            font=("Verdana", 10),
-            bg='#9370db',
-            fg='white',
-            padx=15,
-            pady=8
-        )
+        # Action buttons with new purple styling
+        self.tell_joke_btn = self.create_button(button_frame, "Alexa tell me a Joke", self.show_new_joke)
         self.tell_joke_btn.pack(side='left', padx=5)
         
-        self.punchline_btn = tk.Button(
-            button_frame,
-            text="Show Punchline",
-            command=self.show_punchline,
-            font=("Verdana", 10),
-            bg='#9370db',
-            fg='white',
-            padx=15,
-            pady=8
-        )
+        self.punchline_btn = self.create_button(button_frame, "Show Punchline", self.show_punchline)
         self.punchline_btn.pack(side='left', padx=5)
         
-        self.next_joke_btn = tk.Button(
-            button_frame,
-            text="Next Joke",
-            command=self.show_new_joke,
-            font=("Verdana", 10),
-            bg='#9370db',
-            fg='white',
-            padx=15,
-            pady=8
-        )
+        self.next_joke_btn = self.create_button(button_frame, "Next Joke", self.show_new_joke)
         self.next_joke_btn.pack(side='left', padx=5)
         
-        self.rate_btn = tk.Button(
-            button_frame,
-            text="Rate my Joke",
-            command=self.show_rating,
-            font=("Verdana", 10),
-            bg='#9370db',
-            fg='white',
-            padx=15,
-            pady=8
-        )
+        self.rate_btn = self.create_button(button_frame, "Rate my Joke", self.show_rating)
         self.rate_btn.pack(side='left', padx=5)
         
         # Quit button
-        quit_btn = tk.Button(
-            main_frame,
-            text="Quit",
-            command=self.root.quit,
-            font=("Verdana", 10),
-            bg='#d27979',
-            fg='white',
-            padx=15,
-            pady=8
-        )
+        quit_btn = self.create_button(main_frame, "Quit", self.root.quit, '#d27979')
         quit_btn.pack(pady=10)
+        
+        # Status label for error messages
+        self.status_label = tk.Label(
+            main_frame,
+            text="",
+            font=("Verdana", 8, "italic"),
+            fg='#666666',
+            bg=self.colors['bg']
+        )
+        self.status_label.pack(pady=5)
         
         # Initially disable some buttons
         self.punchline_btn.config(state='disabled')
         self.rate_btn.config(state='disabled')
 
     def show_new_joke(self):
-        """Display a new random joke"""
+        """Display a new random joke with greedy detection"""
+        # Check for greedy behavior
+        if self.joke_count > 0 and not self.punchline_shown:
+            self.show_error_message("Greedy for jokes huh?? At least let me finish!")
+        
         # Reset state
         self.punchline_shown = False
         self.rating_given = False
@@ -256,24 +263,38 @@ class AlexaJokeApp:
             
             # Reset stars
             for star in self.star_buttons:
-                star.config(fg='#d3d3d3')
+                star.config(fg=self.colors['star_inactive'])
+            
+            self.joke_count += 1
 
     def show_punchline(self):
-        """Display the punchline with sound effect"""
-        if hasattr(self, 'current_punchline') and not self.punchline_shown:
-            self.punchline_label.config(text=self.current_punchline)
-            self.punchline_shown = True
-            self.rate_btn.config(state='normal')
-            self.play_punchline_sound()
+        """Display the punchline with spam detection"""
+        if not hasattr(self, 'current_punchline'):
+            self.show_error_message("Bro you don't even KNOW the joke yet...")
+            return
+        
+        if self.punchline_shown:
+            self.show_error_message("Already showed you the punchline! Memory issues?")
+            return
+        
+        self.punchline_label.config(text=self.current_punchline)
+        self.punchline_shown = True
+        self.rate_btn.config(state='normal')
+        self.play_punchline_sound()
+        self.show_error_message("Audience laughter! Ba-dum-tss!")
 
     def show_rating(self):
-        """Show the rating stars"""
-        if self.punchline_shown:
-            self.rating_frame.pack(pady=10)
+        """Show the rating stars with validation"""
+        if not self.punchline_shown:
+            self.show_error_message("Can't rate what you haven't seen! Show the punchline first.")
+            return
+        
+        self.rating_frame.pack(pady=10)
 
     def rate_joke(self, stars):
-        """Handle joke rating with sound effects"""
+        """Handle joke rating with duplicate detection"""
         if self.rating_given:
+            self.show_error_message("You already rated this one! Make up your mind!")
             return
         
         self.rating_given = True
@@ -281,9 +302,9 @@ class AlexaJokeApp:
         # Update star colors
         for i, star in enumerate(self.star_buttons):
             if i < stars:
-                star.config(fg='#ffd700')
+                star.config(fg=self.colors['star_active'])
             else:
-                star.config(fg='#d3d3d3')
+                star.config(fg=self.colors['star_inactive'])
         
         # Show response based on rating
         if stars == 1:
@@ -291,6 +312,7 @@ class AlexaJokeApp:
         elif stars == 5:
             response = "WOOO I'm basically a stand-up comedian now.."
             self.play_celebration_sound()
+            self.show_error_message("Standing ovation!")
         else:
             response = f"Thanks for the {stars} star rating!"
 
