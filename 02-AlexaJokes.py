@@ -46,113 +46,148 @@ class AlexaJokeApp:
         self.show_welcome_screen()
     
     def load_images(self):
-        """Load background images"""
+        """Load background images with error handling"""
         try:
             photos_path = Path("Assessment 1 - Skills Portfolio/A1 - Resources/Photos")
+            
+            if not photos_path.exists():
+                self.show_welcome_error("Images folder not found - running without images")
+                return
             
             # Load neutral background
             neutral_path = photos_path / "neutral.png"
             if neutral_path.exists():
                 image = Image.open(neutral_path)
-                image = image.resize((200, 150), Image.LANCZOS)  # Smaller size
+                image = image.resize((200, 150), Image.LANCZOS)
                 self.images['neutral'] = ImageTk.PhotoImage(image)
+                print("Loaded neutral.png successfully")
+            else:
+                print("neutral.png not found in Photos folder")
             
             # Load cry image for punchline
             cry_path = photos_path / "cry.png"
             if cry_path.exists():
                 image = Image.open(cry_path)
-                image = image.resize((200, 150), Image.LANCZOS)  # Smaller size
+                image = image.resize((200, 150), Image.LANCZOS)
                 self.images['cry'] = ImageTk.PhotoImage(image)
+                print("Loaded cry.png successfully")
+            else:
+                print("cry.png not found in Photos folder")
                 
         except Exception as e:
             print(f"Image loading error: {e}")
+            self.show_welcome_error("Error loading images - continuing without them")
+    
+    def show_welcome_error(self, message):
+        """Store error message to show after GUI loads"""
+        if hasattr(self, 'pending_error'):
+            self.pending_error += f" | {message}"
+        else:
+            self.pending_error = message
     
     def load_sounds(self):
-        """Load sound files in multiple formats"""
+        """Load sound files with comprehensive error handling"""
         try:
             sound_path = Path("Assessment 1 - Skills Portfolio/A1 - Resources/Sounds")
             
-            if sound_path.exists():
-                # Define all available sound files
-                self.available_sounds = {
-                    'laughter': [
-                        sound_path / "57814__timtube__laughing-9.wav"
-                    ],
-                    'applause': [
-                        sound_path / "324184__kwahmah_02__applause-05.wav"
-                    ],
-                    'cricket': [
-                        sound_path / "352789__vintprox__cricket.ogg"
-                    ],
-                    'fbi': [
-                        sound_path / "656732__paladinvii__fbi-open-up-pvii.mp3"
-                    ],
-                    'crowd_wow': [
-                        sound_path / "581410__audiosea__crowd-wow-sound-effect-1.wav"
-                    ]
-                }
-                
-                # Load sounds that exist
-                for category, files in self.available_sounds.items():
-                    for file_path in files:
-                        if file_path.exists():
-                            self.sounds[category] = pygame.mixer.Sound(file_path)
-                            print(f"Loaded {category} sound: {file_path.name}")
-                            break
-                        else:
-                            print(f"Sound file not found: {file_path}")
-                
-                print("Sound files loaded successfully!")
-                
+            if not sound_path.exists():
+                self.show_welcome_error("Sounds folder not found - using fallback sounds")
+                self.create_fallback_sounds()
+                return
+            
+            # Define all available sound files
+            sound_files = {
+                'laughter': "57814__timtube__laughing-9.wav",
+                'applause': "324184__kwahmah_02__applause-05.wav",
+                'cricket': "352789__vintprox__cricket.ogg",
+                'fbi': "656732__paladinvii__fbi-open-up-pvii.mp3",
+                'crowd_wow': "581410__audiosea__crowd-wow-sound-effect-1.wav"
+            }
+            
+            loaded_sounds = 0
+            missing_sounds = []
+            
+            for category, filename in sound_files.items():
+                file_path = sound_path / filename
+                if file_path.exists():
+                    try:
+                        self.sounds[category] = pygame.mixer.Sound(file_path)
+                        loaded_sounds += 1
+                        print(f"✓ Loaded {filename}")
+                    except Exception as e:
+                        print(f"✗ Failed to load {filename}: {e}")
+                        missing_sounds.append(filename)
+                else:
+                    print(f"✗ File not found: {filename}")
+                    missing_sounds.append(filename)
+            
+            if loaded_sounds > 0:
+                print(f"Successfully loaded {loaded_sounds} sound files")
             else:
-                print("Sounds folder not found - using fallback")
+                self.show_welcome_error("No sound files loaded - using fallback sounds")
                 self.create_fallback_sounds()
                 
+            if missing_sounds:
+                self.show_welcome_error(f"Missing {len(missing_sounds)} sound files")
+                
         except Exception as e:
-            print(f"Sound loading error: {e} - Using fallback sounds")
+            print(f"Sound loading error: {e}")
+            self.show_welcome_error("Error loading sounds - using fallback")
             self.create_fallback_sounds()
     
     def create_fallback_sounds(self):
         """Create simple fallback sounds"""
         try:
-            # Create basic fallback sounds
             self.sounds['laughter'] = pygame.mixer.Sound(buffer=bytes([100] * 512))
             self.sounds['applause'] = pygame.mixer.Sound(buffer=bytes([150] * 512))
             self.sounds['crowd_wow'] = pygame.mixer.Sound(buffer=bytes([200] * 512))
+            print("Created fallback sounds")
         except:
+            print("Failed to create fallback sounds")
             self.sounds['laughter'] = None
             self.sounds['applause'] = None
             self.sounds['crowd_wow'] = None
     
     def load_jokes(self):
-        """Load jokes from file"""
+        """Load jokes from file with detailed error reporting"""
         try:
             file_path = Path("Assessment 1 - Skills Portfolio/A1 - Resources/randomJokes.txt")
-            if file_path.exists():
-                with open(file_path, 'r', encoding='utf-8') as file:
-                    lines = [line.strip() for line in file if line.strip()]
-                    self.jokes = [line for line in lines if '?' in line]
-                    
-                if not self.jokes:
-                    raise ValueError("No valid jokes found")
-                print(f"Successfully loaded {len(self.jokes)} jokes!")
-                    
+            
+            if not file_path.exists():
+                self.show_welcome_error("Joke file not found - using backup jokes")
+                self.jokes = self.get_fallback_jokes()
+                return
+            
+            with open(file_path, 'r', encoding='utf-8') as file:
+                lines = [line.strip() for line in file if line.strip()]
+                self.jokes = [line for line in lines if '?' in line]
+            
+            if not self.jokes:
+                self.show_welcome_error("No valid jokes found in file - using backup")
+                self.jokes = self.get_fallback_jokes()
             else:
-                self.jokes = [
-                    "Why did the scarecrow win an award?~He was outstanding in his field!",
-                    "What do you call a fake noodle?~An impasta!"
-                ]
-                
+                print(f"✓ Loaded {len(self.jokes)} jokes successfully")
+                    
         except Exception as e:
-            self.jokes = ["Error loading jokes?~Try again later!"]
+            print(f"Joke loading error: {e}")
+            self.show_welcome_error("Error loading jokes - using backup")
+            self.jokes = self.get_fallback_jokes()
+    
+    def get_fallback_jokes(self):
+        """Provide fallback jokes when file loading fails"""
+        return [
+            "Why did the scarecrow win an award?~He was outstanding in his field!",
+            "What do you call a fake noodle?~An impasta!",
+            "Why don't scientists trust atoms?~Because they make up everything!",
+            "What do you call a sleeping bull?~A bulldozer!",
+            "Why did the coffee file a police report?~It got mugged!"
+        ]
     
     def show_welcome_screen(self):
         """Show welcome screen with start button"""
-        # Clear any existing widgets
         for widget in self.root.winfo_children():
             widget.destroy()
         
-        # Welcome frame
         welcome_frame = tk.Frame(self.root, bg=self.colors['bg'])
         welcome_frame.pack(expand=True, fill='both')
         
@@ -166,14 +201,14 @@ class AlexaJokeApp:
         )
         title_label.pack(pady=80)
         
-        # Start button with same styling as other buttons
+        # Start button
         start_btn = tk.Button(
             welcome_frame,
             text="Alexa tell me a Joke",
             command=self.setup_gui,
             font=("Verdana", 14, "bold"),
-            bg='#f0ebff',  # Same light purple background
-            fg=self.colors['text'],  # Same purple text
+            bg='#f0ebff',
+            fg=self.colors['text'],
             relief='raised',
             padx=25,
             pady=12,
@@ -182,20 +217,34 @@ class AlexaJokeApp:
         )
         start_btn.pack(pady=20)
         
-        # Add hover effect to start button (same as other buttons)
+        # Error display area (initially hidden)
+        self.welcome_error_label = tk.Label(
+            welcome_frame,
+            text="",
+            font=("Verdana", 9),
+            fg='#d27979',
+            bg=self.colors['bg'],
+            wraplength=500
+        )
+        self.welcome_error_label.pack(pady=10)
+        
+        # Show any loading errors
+        if hasattr(self, 'pending_error'):
+            self.welcome_error_label.config(text=f"Note: {self.pending_error}")
+        
+        # Add hover effect
         def on_enter(e):
-            start_btn['bg'] = self.colors['button']  # Darker purple on hover
-            start_btn['fg'] = 'white'  # White text on hover
+            start_btn['bg'] = self.colors['button']
+            start_btn['fg'] = 'white'
         def on_leave(e):
-            start_btn['bg'] = '#f0ebff'  # Light purple background
-            start_btn['fg'] = self.colors['text']  # Purple text
+            start_btn['bg'] = '#f0ebff'
+            start_btn['fg'] = self.colors['text']
             
         start_btn.bind("<Enter>", on_enter)
         start_btn.bind("<Leave>", on_leave)
     
     def setup_gui(self):
         """Setup the main application GUI"""
-        # Clear welcome screen
         for widget in self.root.winfo_children():
             widget.destroy()
         
@@ -245,7 +294,7 @@ class AlexaJokeApp:
         )
         self.punchline_label.pack(pady=10)
         
-        # Rating frame (initially hidden)
+        # Rating frame
         self.rating_frame = tk.Frame(self.joke_frame, bg=self.colors['accent2'])
         self.rating_label = tk.Label(
             self.rating_frame,
@@ -286,7 +335,7 @@ class AlexaJokeApp:
         button_frame = tk.Frame(main_frame, bg=self.colors['bg'])
         button_frame.pack(pady=10)
         
-        # Action buttons (removed "Alexa tell me a Joke" button)
+        # Action buttons
         self.punchline_btn = self.create_button(button_frame, "Show Punchline", self.show_punchline)
         self.punchline_btn.pack(side='left', padx=5)
         
@@ -314,9 +363,11 @@ class AlexaJokeApp:
         self.image_label = tk.Label(main_frame, bg=self.colors['bg'])
         self.image_label.pack(pady=10)
         
-        # Show neutral image initially
+        # Show neutral image if available
         if 'neutral' in self.images:
             self.image_label.config(image=self.images['neutral'])
+        else:
+            self.image_label.config(text="[Images not available]", fg='#999999')
         
         # Initially disable some buttons
         self.punchline_btn.config(state='disabled')
@@ -358,12 +409,11 @@ class AlexaJokeApp:
         """Show temporary error messages"""
         if hasattr(self, 'status_label'):
             self.status_label.config(text=message)
-            self.root.after(3000, lambda: self.status_label.config(text=""))
+            self.root.after(4000, lambda: self.status_label.config(text=""))
     
     def play_punchline_sound(self):
-        """Play random punchline sound"""
+        """Play random punchline sound with error handling"""
         try:
-            # Randomly select a sound to play
             sound_options = ['laughter', 'cricket', 'fbi']
             available_sounds = [s for s in sound_options if s in self.sounds and self.sounds[s]]
             
@@ -371,7 +421,6 @@ class AlexaJokeApp:
                 selected_sound = random.choice(available_sounds)
                 self.sounds[selected_sound].play()
                 
-                # Show appropriate message
                 if selected_sound == 'laughter':
                     self.show_error_message("HAHAHA! That was hilarious!")
                 elif selected_sound == 'cricket':
@@ -379,15 +428,14 @@ class AlexaJokeApp:
                 elif selected_sound == 'fbi':
                     self.show_error_message("FBI OPEN UP! That joke was criminal!")
             else:
-                self.show_error_message("Ba-dum-tss!")
+                self.show_error_message("Ba-dum-tss! (Sound effects unavailable)")
                 
         except Exception as e:
-            self.show_error_message("Audience reaction!")
+            self.show_error_message("Audience reaction! (Sound error)")
     
     def play_celebration_sound(self):
         """Play celebration sound for 5-star rating"""
         try:
-            # Try to play crowd wow sound first, then applause as fallback
             if 'crowd_wow' in self.sounds and self.sounds['crowd_wow']:
                 self.sounds['crowd_wow'].play()
                 self.show_error_message("WOW! The crowd goes wild!")
@@ -395,14 +443,15 @@ class AlexaJokeApp:
                 self.sounds['applause'].play()
                 self.show_error_message("Standing ovation!")
             else:
-                self.show_error_message("Celebration!")
+                self.show_error_message("Celebration! (Sound effects unavailable)")
         except Exception as e:
-            self.show_error_message("Celebration!")
+            self.show_error_message("Celebration! (Sound error)")
     
     def show_new_joke(self):
-        """Display a new random joke"""
+        """Display a new random joke with greedy detection"""
         if self.joke_count > 0 and not self.punchline_shown:
             self.show_error_message("Greedy for jokes huh?? At least let me finish!")
+            return
         
         # Reset state
         self.punchline_shown = False
@@ -410,63 +459,73 @@ class AlexaJokeApp:
         self.rating_frame.pack_forget()
         self.rating_response.config(text="")
         
-        # Show neutral image
+        # Show neutral image if available
         if 'neutral' in self.images:
             self.image_label.config(image=self.images['neutral'])
         
-        if self.jokes:
-            self.current_joke = random.choice(self.jokes)
-            if '?' in self.current_joke:
-                setup, punchline = self.current_joke.split('?', 1)
-                setup = setup.strip() + "?"
-                punchline = punchline.strip()
-            else:
-                setup = self.current_joke
-                punchline = "Punchline missing!"
-            
-            self.current_setup = setup
-            self.current_punchline = punchline
-            
-            self.setup_label.config(text=setup)
-            self.punchline_label.config(text="")
-            self.punchline_btn.config(state='normal')
-            self.rate_btn.config(state='disabled')
-            
-            # Reset stars
-            for star in self.star_buttons:
-                star.config(fg=self.colors['star_inactive'])
-            
-            self.joke_count += 1
+        if not self.jokes:
+            self.show_error_message("No jokes available! Check your joke file.")
+            self.setup_label.config(text="No jokes loaded. Please check the randomJokes.txt file.")
+            self.punchline_btn.config(state='disabled')
+            return
+        
+        self.current_joke = random.choice(self.jokes)
+        if '?' in self.current_joke:
+            setup, punchline = self.current_joke.split('?', 1)
+            setup = setup.strip() + "?"
+            punchline = punchline.strip()
+        else:
+            setup = self.current_joke
+            punchline = "Punchline missing! Alexa is having a moment..."
+        
+        self.current_setup = setup
+        self.current_punchline = punchline
+        
+        self.setup_label.config(text=setup)
+        self.punchline_label.config(text="")
+        self.punchline_btn.config(state='normal')
+        self.rate_btn.config(state='disabled')
+        
+        # Reset stars
+        for star in self.star_buttons:
+            star.config(fg=self.colors['star_inactive'])
+        
+        self.joke_count += 1
     
     def show_punchline(self):
-        """Display the punchline"""
+        """Display the punchline with comprehensive validation"""
         if not hasattr(self, 'current_punchline'):
-            self.show_error_message("Bro you don't even KNOW the joke yet...")
+            self.show_error_message("Error: No joke loaded. Try 'Next Joke' first.")
             return
         
         if self.punchline_shown:
-            self.show_error_message("Already showed you the punchline! Memory issues?")
+            self.show_error_message("Patience! Already showed you the punchline!")
             return
         
         self.punchline_label.config(text=self.current_punchline)
         self.punchline_shown = True
         self.rate_btn.config(state='normal')
         
-        # Play random sound and show cry image
+        # Play random sound and show cry image if available
         self.play_punchline_sound()
         if 'cry' in self.images:
             self.image_label.config(image=self.images['cry'])
     
     def show_rating(self):
-        """Show the rating stars"""
+        """Show the rating stars with validation"""
         if not self.punchline_shown:
             self.show_error_message("Can't rate what you haven't seen! Show the punchline first.")
             return
         
+        if self.rating_given:
+            self.show_error_message("You already rated this masterpiece!")
+            return
+        
         self.rating_frame.pack(pady=10)
+        self.show_error_message("Let me know how I did!")
     
     def rate_joke(self, stars):
-        """Handle joke rating"""
+        """Handle joke rating with comprehensive feedback"""
         if self.rating_given:
             self.show_error_message("You already rated this one! Make up your mind!")
             return
@@ -480,14 +539,22 @@ class AlexaJokeApp:
             else:
                 star.config(fg=self.colors['star_inactive'])
         
-        # Show response based on rating
+        # Enhanced responses for each rating
         if stars == 1:
-            response = "Ouch... you hurt my motherboard.."
-        elif stars == 5:
-            response = "WOOO I'm basically a stand-up comedian now.."
+            response = "Ouch... you hurt my motherboard.. I need therapy now"
+            self.show_error_message("Alexa is crying in the corner...")
+        elif stars == 2:
+            response = "Well that was... an attempt. Back to joke school I go"
+            self.show_error_message("Room for improvement, noted!")
+        elif stars == 3:
+            response = "Not my best work, but I'll take it! Medium rare comedy"
+            self.show_error_message("Decent effort!")
+        elif stars == 4:
+            response = "Hey, I'm getting good at this! Almost professional"
+            self.show_error_message("Getting better every day!")
+        else:  # 5 stars
+            response = "WOOO I'm basically a stand-up comedian now.. Time for my Netflix special!"
             self.play_celebration_sound()
-        else:
-            response = f"Thanks for the {stars} star rating!"
 
         self.rating_response.config(text=response)
 
