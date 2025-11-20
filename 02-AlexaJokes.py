@@ -166,26 +166,30 @@ class AlexaJokeApp:
         )
         title_label.pack(pady=80)
         
-        # Start button
+        # Start button with same styling as other buttons
         start_btn = tk.Button(
             welcome_frame,
-            text="Start",
+            text="Alexa tell me a Joke",
             command=self.setup_gui,
-            font=("Verdana", 16, "bold"),
-            bg=self.colors['button'],
-            fg='white',
+            font=("Verdana", 14, "bold"),
+            bg='#f0ebff',  # Same light purple background
+            fg=self.colors['text'],  # Same purple text
             relief='raised',
-            padx=30,
-            pady=15,
-            cursor="hand2"
+            padx=25,
+            pady=12,
+            cursor="hand2",
+            borderwidth=2
         )
         start_btn.pack(pady=20)
         
-        # Add hover effect to start button
+        # Add hover effect to start button (same as other buttons)
         def on_enter(e):
-            start_btn['bg'] = self.colors['button_hover']
+            start_btn['bg'] = self.colors['button']  # Darker purple on hover
+            start_btn['fg'] = 'white'  # White text on hover
         def on_leave(e):
-            start_btn['bg'] = self.colors['button']
+            start_btn['bg'] = '#f0ebff'  # Light purple background
+            start_btn['fg'] = self.colors['text']  # Purple text
+            
         start_btn.bind("<Enter>", on_enter)
         start_btn.bind("<Leave>", on_leave)
     
@@ -282,10 +286,7 @@ class AlexaJokeApp:
         button_frame = tk.Frame(main_frame, bg=self.colors['bg'])
         button_frame.pack(pady=10)
         
-        # Action buttons
-        self.tell_joke_btn = self.create_button(button_frame, "Alexa tell me a Joke", self.show_new_joke)
-        self.tell_joke_btn.pack(side='left', padx=5)
-        
+        # Action buttons (removed "Alexa tell me a Joke" button)
         self.punchline_btn = self.create_button(button_frame, "Show Punchline", self.show_punchline)
         self.punchline_btn.pack(side='left', padx=5)
         
