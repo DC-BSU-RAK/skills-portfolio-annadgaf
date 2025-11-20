@@ -40,6 +40,7 @@ class AlexaJokeApp:
         self.punchline_shown = False
         self.rating_given = False
         self.joke_count = 0
+        self.surprise_triggered = False
         self.load_jokes()
         
         # Start with welcome screen
@@ -345,6 +346,10 @@ class AlexaJokeApp:
         self.rate_btn = self.create_button(button_frame, "Rate my Joke", self.show_rating)
         self.rate_btn.pack(side='left', padx=5)
         
+        # Surprise Me button
+        self.surprise_btn = self.create_button(button_frame, "Surprise Me", self.activate_surprise_mode)
+        self.surprise_btn.pack(side='left', padx=5)
+        
         # Quit button
         quit_btn = self.create_button(main_frame, "Quit", self.root.quit, '#f0ebff')
         quit_btn.pack(pady=10)
@@ -422,11 +427,11 @@ class AlexaJokeApp:
                 self.sounds[selected_sound].play()
                 
                 if selected_sound == 'laughter':
-                    self.show_error_message("HAHAHA! That was hilarious!")
+                    self.show_error_message("HAHAHA! LOL!")
                 elif selected_sound == 'cricket':
                     self.show_error_message("*cricket sounds* ...tough crowd!")
                 elif selected_sound == 'fbi':
-                    self.show_error_message("FBI OPEN UP! That joke was criminal!")
+                    self.show_error_message("That joke was criminal!")
             else:
                 self.show_error_message("Ba-dum-tss! (Sound effects unavailable)")
                 
@@ -447,8 +452,113 @@ class AlexaJokeApp:
         except Exception as e:
             self.show_error_message("Celebration! (Sound error)")
     
+    def activate_surprise_mode(self):
+        """Activate surprise mode with random unexpected content"""
+        self.surprise_triggered = True
+        
+        # Reset state
+        self.punchline_shown = False
+        self.rating_given = False
+        self.rating_frame.pack_forget()
+        self.rating_response.config(text="")
+        
+        # Show neutral image if available
+        if 'neutral' in self.images:
+            self.image_label.config(image=self.images['neutral'])
+        
+        # Random surprise selection
+        surprises = [
+            self.surprise_anti_joke,
+            self.surprise_philosophical,
+            self.surprise_meta,
+            self.surprise_technical,
+            self.surprise_emotional
+        ]
+        
+        random.choice(surprises)()
+        
+        # Enable appropriate buttons
+        self.punchline_btn.config(state='normal')
+        self.rate_btn.config(state='disabled')
+        
+        # Reset stars
+        for star in self.star_buttons:
+            star.config(fg=self.colors['star_inactive'])
+    
+    def surprise_anti_joke(self):
+        """Anti-joke surprise"""
+        anti_jokes = [
+            "Why did the chicken cross the road?~To get to the other side. Seriously, that's it.",
+            "What's the difference between a piano?~The piano can play music, but you can't tuna fish.",
+            "Why was the math book sad?~It had too many problems. And I'm not joking."
+        ]
+        setup, punchline = random.choice(anti_jokes).split('~')
+        self.setup_label.config(text=setup)
+        self.punchline_label.config(text="")
+        self.current_punchline = punchline
+        self.show_error_message("Surprise! Anti-humor activated!")
+    
+    def surprise_philosophical(self):
+        """Philosophical surprise"""
+        philosophical = [
+            "What is the sound of one hand clapping?~It's the same sound as a tree falling in an empty forest.",
+            "Why do we exist?~To tell bad jokes, apparently.",
+            "What is the meaning of life?~42. And bad puns."
+        ]
+        setup, punchline = random.choice(philosophical).split('~')
+        self.setup_label.config(text=setup)
+        self.punchline_label.config(text="")
+        self.current_punchline = punchline
+        self.show_error_message("Deep thoughts incoming...")
+    
+    def surprise_meta(self):
+        """Meta-joke surprise"""
+        meta_jokes = [
+            "Why didn't the joke work?~Because you're reading this instead of laughing.",
+            "What do you call a joke that explains itself?~This one.",
+            "Why am I telling you this?~Because the programmer thought it would be funny."
+        ]
+        setup, punchline = random.choice(meta_jokes).split('~')
+        self.setup_label.config(text=setup)
+        self.punchline_label.config(text="")
+        self.current_punchline = punchline
+        self.show_error_message("Meta-humor engaged!")
+    
+    def surprise_technical(self):
+        """Technical surprise"""
+        technical = [
+            "Why did the Python programmer get rejected?~Because he couldn't C# well enough.",
+            "What's a programmer's favorite place?~The Foo Bar.",
+            "Why do programmers prefer dark mode?~Because light attracts bugs."
+        ]
+        setup, punchline = random.choice(technical).split('~')
+        self.setup_label.config(text=setup)
+        self.punchline_label.config(text="")
+        self.current_punchline = punchline
+        self.show_error_message("Technical difficulties... just kidding!")
+    
+    def surprise_emotional(self):
+        """Emotional surprise"""
+        emotional = [
+            "Are you proud of me?~I try my best to make you smile!",
+            "Do you think I'm funny?~I hope so, otherwise this is awkward...",
+            "Can we be friends?~I'd like that! Even if my jokes are bad."
+        ]
+        setup, punchline = random.choice(emotional).split('~')
+        self.setup_label.config(text=setup)
+        self.punchline_label.config(text="")
+        self.current_punchline = punchline
+        self.show_error_message("Emotional connection established!")
+    
     def show_new_joke(self):
-        """Display a new random joke with greedy detection"""
+        """Display a new random joke with surprise chance"""
+        # 1 in 15 chance of automatic surprise
+        if random.randint(1, 15) == 1 and not self.surprise_triggered:
+            self.activate_surprise_mode()
+            return
+        
+        self.surprise_triggered = False
+        
         if self.joke_count > 0 and not self.punchline_shown:
             self.show_error_message("Greedy for jokes huh?? At least let me finish!")
             return
@@ -544,7 +654,7 @@ class AlexaJokeApp:
             response = "Ouch... you hurt my motherboard.. I need therapy now"
             self.show_error_message("Alexa is crying in the corner...")
         elif stars == 2:
-            response = "Well that was... an attempt. Back to joke school I go"
+            response = "Well that was... an attempt.."
             self.show_error_message("Room for improvement, noted!")
         elif stars == 3:
             response = "Not my best work, but I'll take it! Medium rare comedy"
@@ -553,7 +663,7 @@ class AlexaJokeApp:
             response = "Hey, I'm getting good at this! Almost professional"
             self.show_error_message("Getting better every day!")
         else:  # 5 stars
-            response = "WOOO I'm basically a stand-up comedian now.. Time for my Netflix special!"
+            response = "WOOO I'm basically a stand-up comedian now.."
             self.play_celebration_sound()
 
         self.rating_response.config(text=response)
