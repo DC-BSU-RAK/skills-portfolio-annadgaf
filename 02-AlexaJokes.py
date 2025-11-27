@@ -27,9 +27,9 @@ Assessment 1 - Skills Portfolio/
 │       ├── 656732__paladinvii__fbi-open-up-pvii.mp3
 │       └── 581410__audiosea__crowd-wow-sound-effect-1.wav
 
-Author: [Your Name]
-Date: [Current Date]
-Course: Programming Skills Portfolio
+Author: Anna Marielle C. Reyes
+Date: 19/11/25
+Course: Code Lab 2
 """
 
 import tkinter as tk
