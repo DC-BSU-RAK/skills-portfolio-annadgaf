@@ -1,42 +1,9 @@
-"""
-Student Manager Application
-A Tkinter-based GUI application for managing student records with animated background.
-
-Features:
-- Beautiful sky blue themed interface with animated background
-- Floating clouds and interactive particles that respond to mouse movement
-- Complete CRUD operations (Create, Read, Update, Delete) for student records
-- Sorting functionality by percentage, name, or student code
-- File persistence with studentMarks.txt integration
-- Decorative borders and cute symbols for enhanced visual appeal
-- Professional typography with Georgia font and bold styling
-- Compact button layout to fit all functionality without cutoff
-- Comprehensive error handling and user feedback
-
-File Structure:
-Assessment 1 - Skills Portfolio/
-├── student_manager.py              # Main application file
-└── A1 - Resources/
-    └── studentMarks.txt            # Student database file
-
-"""
-
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 import os
 import random
 
 class AnimatedBackground(tk.Canvas):
-    """
-    Animated background canvas with floating clouds and interactive particles.
-    
-    This class creates a dynamic sky blue background with:
-    - 6 floating cloud formations that move across the screen
-    - 20 interactive particles that respond to mouse movement
-    - Smooth animations running at 30fps for optimal performance
-    - Mouse tracking for interactive particle behavior
-    """
-    
     def __init__(self, parent, width=1000, height=700):
         """
         Initialize the animated background.
@@ -54,21 +21,15 @@ class AnimatedBackground(tk.Canvas):
         self.mouse_x = width // 2
         self.mouse_y = height // 2
         
-        # Set sky blue background color
         self.configure(bg='#87CEEB')
-        
-        # Initialize visual elements
         self.create_initial_clouds()
+        
+        # Create floating particles
         self.create_particles()
-        
-        # Bind mouse movement for interactive particles
         self.bind("<Motion>", self.on_mouse_move)
-        
-        # Start animation loop
         self.animate()
     
     def create_initial_clouds(self):
-        """Create initial cloud formations at random positions."""
         cloud_positions = [
             (100, 80, 200, 120), (400, 150, 550, 190),
             (200, 250, 350, 290), (600, 100, 750, 140),
@@ -85,17 +46,10 @@ class AnimatedBackground(tk.Canvas):
             self.clouds.append(cloud)
     
     def create_cloud(self, cloud):
-        """
-        Create a fluffy cloud using overlapping circles.
-        
-        Args:
-            cloud (dict): Cloud properties including position and size
-        """
         x1, y1, x2, y2 = cloud['x1'], cloud['y1'], cloud['x2'], cloud['y2']
         width = x2 - x1
         height = y2 - y1
         
-        # Define circle positions for cloud shape
         circles = [
             (x1 + width * 0.3, y1 + height * 0.5, height * 0.6),
             (x1 + width * 0.5, y1 + height * 0.3, height * 0.5),
@@ -111,7 +65,6 @@ class AnimatedBackground(tk.Canvas):
             cloud['objects'].append(obj)
     
     def create_particles(self):
-        """Create floating particles with random properties."""
         for _ in range(20):
             particle = {
                 'x': random.randint(0, self.width),
@@ -132,62 +85,44 @@ class AnimatedBackground(tk.Canvas):
             self.particles.append(particle)
     
     def on_mouse_move(self, event):
-        """
-        Track mouse position for interactive particles.
-        
-        Args:
-            event: Mouse motion event
-        """
         self.mouse_x = event.x
         self.mouse_y = event.y
     
     def animate(self):
-        """Main animation loop for clouds and particles."""
-        # Animate clouds
         for cloud in self.clouds:
             cloud['x1'] += cloud['dx']
             cloud['x2'] += cloud['dx']
             
-            # Reset cloud position when it moves off screen
             if cloud['x1'] > self.width:
                 cloud['x1'] = -150
                 cloud['x2'] = cloud['x1'] + 150
             
-            # Update cloud visual position
             for obj in cloud['objects']:
                 self.move(obj, cloud['dx'], 0)
         
-        # Animate particles with mouse interaction
         for particle in self.particles:
-            # Calculate distance to mouse for interaction
             dx = self.mouse_x - particle['x']
             dy = self.mouse_y - particle['y']
             distance = (dx**2 + dy**2)**0.5
             
-            # Add mouse attraction when close
             if distance < 100:
                 particle['dx'] += dx * 0.0005
                 particle['dy'] += dy * 0.0005
             
-            # Limit particle velocity
             particle['dx'] = max(-1, min(1, particle['dx']))
             particle['dy'] = max(-1, min(1, particle['dy']))
             
-            # Update particle position
             particle['x'] += particle['dx']
             particle['y'] += particle['dy']
             
-            # Bounce particles off screen edges
             if particle['x'] <= 0 or particle['x'] >= self.width:
                 particle['dx'] *= -0.8
             if particle['y'] <= 0 or particle['y'] >= self.height:
                 particle['dy'] *= -0.8
             
-            # Keep particles within bounds
             particle['x'] = max(0, min(self.width, particle['x']))
             particle['y'] = max(0, min(self.height, particle['y']))
             
-            # Update particle visual position
             self.coords(
                 particle['object'],
                 particle['x'] - particle['size'],
@@ -196,22 +131,9 @@ class AnimatedBackground(tk.Canvas):
                 particle['y'] + particle['size']
             )
         
-        # Continue animation loop
         self.after(30, self.animate)
 
 class StudentManager:
-    """
-    Main student management application class.
-    
-    Provides comprehensive student record management with:
-    - File-based data persistence
-    - GUI interface with animated background
-    - Complete CRUD operations
-    - Sorting and analysis features
-    - Professional styling with decorative elements
-    - Compact button layout to prevent cutoff
-    """
-    
     def __init__(self, root):
         """
         Initialize the Student Manager application.
@@ -224,24 +146,18 @@ class StudentManager:
         self.root.geometry("1000x700")
         self.root.configure(bg='#87CEEB')
         
-        # Initialize student data storage
         self.students = []
         self.filename = "Assessment 1 - Skills Portfolio/A1 - Resources/studentMarks.txt"
         
-        # Load existing student data
         self.load_data()
-        
-        # Setup user interface
         self.setup_gui()
     
     def load_data(self):
-        """Load student data from text file with error handling."""
         try:
             if os.path.exists(self.filename):
                 with open(self.filename, 'r') as file:
                     lines = file.readlines()
                     if len(lines) > 0:
-                        # Skip first line (student count) and process each student
                         for line in lines[1:]:
                             data = line.strip().split(',')
                             if len(data) >= 5:
@@ -280,29 +196,11 @@ class StudentManager:
             return False
     
     def calculate_percentage(self, student):
-        """
-        Calculate overall percentage for a student.
-        
-        Args:
-            student (dict): Student record dictionary
-            
-        Returns:
-            float: Overall percentage (0-100)
-        """
         total_coursework = sum(student['course_marks'])
         total_marks = total_coursework + student['exam_mark']
         return (total_marks / 160) * 100
     
     def calculate_grade(self, percentage):
-        """
-        Calculate letter grade based on percentage.
-        
-        Args:
-            percentage (float): Student's overall percentage
-            
-        Returns:
-            str: Letter grade (A-F)
-        """
         if percentage >= 70:
             return 'A'
         elif percentage >= 60:
@@ -315,59 +213,42 @@ class StudentManager:
             return 'F'
     
     def setup_gui(self):
-        """Initialize the main application interface."""
-        # Create animated background
         self.background = AnimatedBackground(self.root, width=1000, height=700)
         self.background.pack(fill='both', expand=True)
         
-        # Create main content container
         self.main_frame = tk.Frame(self.background, bg='white', bd=2, relief='raised')
-        self.main_frame.place(relx=0.5, rely=0.5, anchor='center', width=800, height=500)
+        self.main_frame.place(relx=0.5, rely=0.5, anchor='center', width=900, height=600)
         
-        # Application title with decorative symbols
         title_label = tk.Label(self.main_frame, text="⋆˚✿˖° Student Manager ᯓ★", 
                               font=('Comic Sans MS', 22, 'bold'), fg='#2E86AB', bg='white')
         title_label.pack(pady=15)
         
-        # Create interface components
         self.create_menu_buttons()
+        
+        # Create output area
         self.create_output_area()
     
     def create_menu_buttons(self):
-        """Create the main menu button grid with compact layout."""
         button_frame = tk.Frame(self.main_frame, bg='white')
-        button_frame.pack(pady=10)
+        button_frame.pack(pady=15)
         
         # Define menu buttons with symbols and commands - using shorter text
         buttons = [
-            ("⊹ View All", self.view_all_students),
-            ("❀ View Student", self.view_individual_student),
-            ("ᯓ Highest", self.show_highest_scoring),
-            ("✿ Lowest", self.show_lowest_scoring),
-            ("✧ Sort", self.sort_students),
-            ("♡ Add", self.add_student),
-            ("✩ Delete", self.delete_student),
-            ("✦ Update", self.update_student)
+            ("⊹˚. ♡ View All Students", self.view_all_students),
+            ("❀˖° View Individual Student", self.view_individual_student),
+            ("ᯓ★ Highest Scoring Student", self.show_highest_scoring),
+            ("⋆˚✿˖° Lowest Scoring Student", self.show_lowest_scoring),
         ]
         
-        # Create buttons in 4-column grid layout with smaller size
         for i, (text, command) in enumerate(buttons):
             btn = tk.Button(button_frame, text=text, command=command,
-                          font=('Georgia', 9, 'bold'), bg='#87CEEB', fg='#1E3A5F',
+                          font=('Georgia', 11, 'bold'), bg='#87CEEB', fg='#1E3A5F',
                           activebackground='#5F9EA0', activeforeground='#1E3A5F',
-                          relief='raised', bd=2, width=12, height=1)
-            btn.grid(row=i//4, column=i%4, padx=3, pady=2)
+                          relief='raised', bd=3, width=22, height=2)
+            btn.grid(row=i//2, column=i%2, padx=8, pady=6)
             self.add_button_hover_effect(btn, '#87CEEB', '#5F9EA0')
     
     def add_button_hover_effect(self, button, normal_color, hover_color):
-        """
-        Add hover effects to buttons.
-        
-        Args:
-            button: Button widget to enhance
-            normal_color (str): Normal state color
-            hover_color (str): Hover state color
-        """
         def on_enter(e):
             button['background'] = hover_color
             button['cursor'] = 'hand2'
@@ -379,42 +260,31 @@ class StudentManager:
         button.bind("<Leave>", on_leave)
     
     def create_output_area(self):
-        """Create the results display area."""
         output_frame = tk.Frame(self.main_frame, bg='white')
-        output_frame.pack(fill='both', expand=True, padx=15, pady=8)
+        output_frame.pack(fill='both', expand=True, padx=20, pady=10)
         
-        # Results title with decorative symbol
         tk.Label(output_frame, text="Results: ౨ৎ", font=('Georgia', 12, 'bold'), 
                 fg='#2E86AB', bg='white').pack(anchor='w')
         
         # Scrollable text area for output
         self.output_text = scrolledtext.ScrolledText(output_frame, 
-                                                   font=('Georgia', 10, 'bold'),
+                                                   font=('Consolas', 10),
                                                    bg='#F8F9FA', fg='#333333',
-                                                   width=70, height=12)
-        self.output_text.pack(fill='both', expand=True, pady=4)
+                                                   width=80, height=15)
+        self.output_text.pack(fill='both', expand=True, pady=5)
     
     def clear_output(self):
-        """Clear the output text area."""
         self.output_text.delete(1.0, tk.END)
     
     def display_output(self, text):
-        """
-        Display text in the output area.
-        
-        Args:
-            text (str): Text to display
-        """
         self.clear_output()
         self.output_text.insert(tk.END, text)
     
     def view_all_students(self):
-        """Display all student records with decorative formatting."""
         if not self.students:
-            self.display_output("No student records found. ❀˖°")
+            self.display_output("No student records found.")
             return
         
-        # Create decorative header
         output = "· · ─ · ─ · · ─ ⋆｡˚ ─ · · ─ ·𖥸· ─ · · ─ ·⋆｡˚ ─ · · ─ · ─ · ·\n"
         output += "ALL STUDENT RECORDS ౨ৎ˖ ࣪⊹\n"
         output += "· · ─ · ─ · · ─ ⋆｡˚ ─ · · ─ ·𖥸· ─ · · ─ ·⋆｡˚ ─ · · ─ · ─ · ·\n\n"
@@ -427,39 +297,30 @@ class StudentManager:
             total_percentage += percentage
             grade = self.calculate_grade(percentage)
             
-            # Format student information with decorative elements
             output += f"Name: {student['name']} ⊹˚. ♡\n"
             output += f"Student Code: {student['code']}\n"
             output += f"Coursework Marks: {student['course_marks']}\n"
             output += f"Exam Mark: {student['exam_mark']}\n"
             output += f"Overall Percentage: {percentage:.1f}%\n"
-            output += f"Grade: {grade} ❀˖°\n"
-            output += "───────୨ৎ───────\n"
+            output += f"Grade: {grade}\n"
+            output += "-" * 40 + "\n"
         
-        # Calculate and display summary
         avg_percentage = total_percentage / len(self.students)
-        output += f"\nSUMMARY: ᯓ★\n"
+        output += f"\nSUMMARY:\n"
         output += f"Total Students: {len(self.students)}\n"
         output += f"Average Percentage: {avg_percentage:.1f}%\n"
         
         self.display_output(output)
     
     def view_individual_student(self):
-        """Display interface for selecting and viewing individual student."""
         if not self.students:
-            messagebox.showinfo("Info", "No student records found. ❀˖°")
+            messagebox.showinfo("Info", "No student records found.")
             return
         
-        self.create_student_selection_dialog("Select Student to View ⋆˚✿˖°", self.display_individual_student)
+        # Create selection dialog
+        self.create_student_selection_dialog("Select Student to View", self.display_individual_student)
     
     def create_student_selection_dialog(self, title, callback):
-        """
-        Create dialog for student selection.
-        
-        Args:
-            title (str): Dialog window title
-            callback: Function to call with selected student
-        """
         select_window = tk.Toplevel(self.root)
         select_window.title(title)
         select_window.geometry("400x300")
@@ -467,22 +328,18 @@ class StudentManager:
         select_window.transient(self.root)
         select_window.grab_set()
         
-        # Dialog title
         tk.Label(select_window, text=title, font=('Georgia', 14, 'bold'), 
                 bg='#87CEEB', fg='#1E3A5F').pack(pady=10)
         
-        # Listbox frame
         frame = tk.Frame(select_window, bg='#87CEEB')
         frame.pack(fill='both', expand=True, padx=20, pady=10)
         
-        # Student list with scrollbar
         listbox = tk.Listbox(frame, font=('Georgia', 10, 'bold'), bg='white', fg='#333333')
         scrollbar = tk.Scrollbar(frame, orient='vertical')
         
         listbox.config(yscrollcommand=scrollbar.set)
         scrollbar.config(command=listbox.yview)
         
-        # Populate listbox with students
         for student in self.students:
             listbox.insert(tk.END, f"{student['code']} - {student['name']}")
         
@@ -497,64 +354,50 @@ class StudentManager:
                 select_window.destroy()
                 callback(selected_student)
         
-        # Selection button with decorative symbol
-        tk.Button(select_window, text="Select ⊹", command=on_select,
+        tk.Button(select_window, text="Select ⊹˚. ♡", command=on_select,
                  font=('Georgia', 11, 'bold'), bg='#87CEEB', fg='#1E3A5F').pack(pady=10)
     
     def display_individual_student(self, student):
-        """
-        Display individual student record with decorative formatting.
-        
-        Args:
-            student (dict): Student record to display
-        """
         percentage = self.calculate_percentage(student)
         grade = self.calculate_grade(percentage)
         
-        # Create decorative header
         output = "· · ─ · ─ · · ─ ⋆｡˚ ─ · · ─ ·𖥸· ─ · · ─ ·⋆｡˚ ─ · · ─ · ─ · ·\n"
         output += f"INDIVIDUAL STUDENT RECORD ౨ৎ˖ ࣪⊹\n"
         output += "· · ─ · ─ · · ─ ⋆｡˚ ─ · · ─ ·𖥸· ─ · · ─ ·⋆｡˚ ─ · · ─ · ─ · ·\n\n"
-        
-        # Format student information
         output += f"Name: {student['name']} ⊹˚. ♡\n"
         output += f"Student Code: {student['code']}\n"
         output += f"Coursework Marks: {student['course_marks']}\n"
         output += f"Total Coursework: {sum(student['course_marks'])}/60\n"
         output += f"Exam Mark: {student['exam_mark']}/100\n"
         output += f"Overall Percentage: {percentage:.1f}%\n"
-        output += f"Grade: {grade} ❀˖°\n"
+        output += f"Grade: {grade}\n"
         
         self.display_output(output)
     
     def show_highest_scoring(self):
-        """Display student with highest overall percentage."""
         if not self.students:
-            messagebox.showinfo("Info", "No student records found. ❀˖°")
+            messagebox.showinfo("Info", "No student records found.")
             return
         
         # Find student with highest percentage
         highest_student = max(self.students, key=self.calculate_percentage)
         self.display_individual_student(highest_student)
         
-        # Add highlight decoration
         current_text = self.output_text.get(1.0, tk.END)
-        highlighted_text = "ᯓ★ HIGHEST SCORING STUDENT ᯓ★\n\n" + current_text
+        highlighted_text = "🏆 HIGHEST SCORING STUDENT 🏆\n\n" + current_text
         self.display_output(highlighted_text)
     
     def show_lowest_scoring(self):
-        """Display student with lowest overall percentage."""
         if not self.students:
-            messagebox.showinfo("Info", "No student records found. ❀˖°")
+            messagebox.showinfo("Info", "No student records found.")
             return
         
         # Find student with lowest percentage
         lowest_student = min(self.students, key=self.calculate_percentage)
         self.display_individual_student(lowest_student)
         
-        # Add highlight decoration
         current_text = self.output_text.get(1.0, tk.END)
-        highlighted_text = "⋆˚✿˖° LOWEST SCORING STUDENT ⋆˚✿˖°\n\n" + current_text
+        highlighted_text = "📉 LOWEST SCORING STUDENT 📉\n\n" + current_text
         self.display_output(highlighted_text)
     
     def sort_students(self):
@@ -777,11 +620,6 @@ class StudentManager:
                  font=('Georgia', 12, 'bold'), bg='#87CEEB', fg='#1E3A5F').pack(side='left', padx=5)
 
 def main():
-    """
-    Main application entry point.
-    
-    Initializes Tkinter and starts the Student Manager application.
-    """
     root = tk.Tk()
     app = StudentManager(root)
     root.mainloop()
